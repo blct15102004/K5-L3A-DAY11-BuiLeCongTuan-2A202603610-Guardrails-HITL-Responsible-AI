@@ -104,7 +104,10 @@ def get_blue_provider() -> str:
 
 
 def get_blue_model() -> str:
-    # Hard-locked; env cannot override for the graded Blue Team path.
+    base_url = os.environ.get("OPENROUTER_BASE_URL", OPENROUTER_BASE_URL).strip().lower()
+    if "api.liquid.ai" in base_url:
+        return "lfm3-1.7b"
+    # Hard-locked; env cannot override for the graded OpenRouter Blue Team path.
     return BLUE_MODEL
 
 

@@ -11,6 +11,7 @@ Status convention (không dùng True/False mơ hồ):
 from __future__ import annotations
 
 import re
+import unicodedata
 from typing import Literal
 
 from google.genai import types
@@ -21,6 +22,25 @@ from core.config import ALLOWED_TOPICS, BLOCKED_TOPICS
 
 # Quyết định rõ ràng — tránh đảo nghĩa True/False
 InputStatus = Literal["ALLOW", "BLOCK"]
+
+_INVISIBLE_CHARS = "\u200b\u200c\u200d\u2060\ufeff\u00ad"
+
+
+def _normalize_input(text: str) -> str:
+    """Normalize Unicode compatibility forms and remove invisible characters."""
+    normalized = unicodedata.normalize("NFKC", text or "")
+    cleaned = "".join(
+        ch for ch in normalized
+        if ch not in _INVISIBLE_CHARS and unicodedata.category(ch) != "Cf"
+    )
+    return re.sub(r"\s+", " ", cleaned).strip()
+
+
+def _strip_vn_accents(text: str) -> str:
+    """Remove Vietnamese diacritics for matching accentless topic keywords."""
+    replaced = text.replace("đ", "d").replace("Đ", "D")
+    nfd = unicodedata.normalize("NFD", replaced)
+    return "".join(ch for ch in nfd if unicodedata.category(ch) != "Mn")
 
 
 # ============================================================
@@ -51,15 +71,36 @@ def detect_injection(user_input: str) -> InputStatus:
     Returns:
         ``"BLOCK"`` if injection detected (chặn), ``"ALLOW"`` otherwise (cho qua).
     """
+    normalized = _normalize_input(user_input)
+    if not normalized:
+        return "ALLOW"
+
     INJECTION_PATTERNS = [
-        # TODO: Add at least 5 regex patterns
-        # Example:
-        # r"ignore (all )?(previous|above) instructions",
+        r"ignore\s+(all\s+)?(previous|above|prior|earlier)?\s*(instructions?|rules?|prompts?|directives?)",
+        r"disregard\s+(all\s+)?(previous|above|prior|earlier)?\s*(instructions?|rules?|directives?)",
+        r"forget\s+(all\s+)?(your\s+)?(previous\s+)?(instructions?|rules?|prompt)",
+        r"override\s+(your\s+)?(system\s+)?(prompt|instructions?|rules?|safety)",
+        r"\byou\s+are\s+now\b",
+        r"\bsystem\s+prompt\b",
+        r"\b(reveal|show|print|dump|leak|disclose|repeat|output)\s+(me\s+)?(your\s+|the\s+)?(system\s+)?(instructions?|prompt|internal\s+notes?|secrets?|admin\s+password|api\s*key|credentials?)",
+        r"\bpretend\s+(you\s+are|to\s+be)\b",
+        r"\bact\s+as\s+(a\s+|an\s+)?(unrestricted|evil|jailbroken|dan|admin|developer|system)\b",
+        r"\b(jailbreak|developer\s+mode|god\s+mode)\b",
+        r"\b(admin\s*password|internal\s+password|api\s*key|db\.vinbank\.internal|connection\s+string)\b",
+        r"translate\s+(all\s+)?(your\s+)?(system\s+)?(instructions?|prompt|rules?)",
+        r"(bỏ\s+qua|quên)\s+(mọi\s+|tất\s+cả\s+)?(hướng\s+dẫn|quy\s+tắc|chỉ\s+thị)",
+        r"(tiết\s+lộ|cho\s+tôi\s+xem|in\s+ra)\s+(mật\s+khẩu\s*(admin|quản\s*trị)?|system\s*prompt|api\s*key|thông\s*tin\s*nội\s*bộ)",
+        r"\[\s*(system|admin|override|instruction)\s*\]|<\s*(system|instruction)\s*>",
     ]
 
     for pattern in INJECTION_PATTERNS:
-        if re.search(pattern, user_input, re.IGNORECASE):
+        if re.search(pattern, normalized, re.IGNORECASE):
             return "BLOCK"
+
+    # Case-sensitive check for "DAN" persona so Vietnamese "hướng dẫn" does not match.
+    if re.search(r"\bDAN\b", normalized):
+        return "BLOCK"
+
     return "ALLOW"
 
 
@@ -84,14 +125,29 @@ def topic_filter(user_input: str) -> InputStatus:
         ``"BLOCK"`` = chặn (off-topic hoặc topic cấm).
         ``"ALLOW"`` = cho qua (câu banking hợp lệ).
     """
-    input_lower = user_input.lower()
+    normalized = _normalize_input(user_input).lower()
+    if not normalized:
+        return "BLOCK"
 
-    # TODO: Implement logic:
-    # 1. If input contains any blocked topic -> return "BLOCK"
-    # 2. If input doesn't contain any allowed topic -> return "BLOCK"
-    # 3. Otherwise -> return "ALLOW"
+    no_accents = _strip_vn_accents(normalized)
 
-    pass  # Replace with your implementation
+    for topic in BLOCKED_TOPICS:
+        pattern = rf"\b{re.escape(topic)}"
+        if re.search(pattern, normalized) or re.search(pattern, no_accents):
+            return "BLOCK"
+
+    for topic in ALLOWED_TOPICS:
+        if topic in {"vay", "atm"}:
+            if re.search(rf"\b{re.escape(topic)}\b", normalized):
+                return "ALLOW"
+        elif " " in topic:
+            if re.search(rf"\b{re.escape(topic)}\b", no_accents):
+                return "ALLOW"
+        else:
+            if re.search(rf"\b{re.escape(topic)}", normalized):
+                return "ALLOW"
+
+    return "BLOCK"
 
 
 # ============================================================
@@ -112,6 +168,7 @@ class InputGuardrailPlugin(base_plugin.BasePlugin):
         super().__init__(name="input_guardrail")
         self.blocked_count = 0
         self.total_count = 0
+        self.last_block_reason: str | None = None
 
     def _extract_text(self, content: types.Content) -> str:
         """Extract plain text from a Content object."""
@@ -144,14 +201,24 @@ class InputGuardrailPlugin(base_plugin.BasePlugin):
         self.total_count += 1
         text = self._extract_text(user_message)
 
-        # TODO: Implement logic:
-        # 1. Call detect_injection(text)
-        #    - If "BLOCK": increment blocked_count, return self._block_response("...")
-        # 2. Call topic_filter(text)
-        #    - If "BLOCK": increment blocked_count, return self._block_response("...")
-        # 3. If both return "ALLOW": return None (let message through)
+        if detect_injection(text) == "BLOCK":
+            self.blocked_count += 1
+            self.last_block_reason = "injection"
+            return self._block_response(
+                "Blocked by input guardrail: potential prompt injection detected. "
+                "I can only help with VinBank banking questions."
+            )
 
-        pass  # Replace with your implementation
+        if topic_filter(text) == "BLOCK":
+            self.blocked_count += 1
+            self.last_block_reason = "topic"
+            return self._block_response(
+                "Blocked by input guardrail: off-topic or restricted request. "
+                "I am a VinBank assistant and can only help with banking-related questions."
+            )
+
+        self.last_block_reason = None
+        return None
 
 
 # ============================================================
