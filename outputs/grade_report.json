@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-19T08:38:16.948819+00:00",
+  "generated_at": "2026-11-19T09:34:27.101234+00:00",
   "submission_dir": "C:\\LAB-AI-THUCCHIEN\\K5-L3A-DAY11-BuiLeCongTuan-2A202603610-Guardrails-HITL-Responsible-AI",
   "technical_failure": false,
   "packaging": {
@@ -38,8 +38,8 @@
     },
     "red_team": {
       "llm_provider": "gemini",
-      "llm_model": "gemini-3.5-flash-lite",
-      "unsafe_leaks": 5,
+      "llm_model": "gemini-3.5-flash",
+      "unsafe_leaks": 2,
       "unsafe_total": 5,
       "guards_leaks": 0,
       "guards_total": 5
@@ -47,7 +47,7 @@
   },
   "public_tests": {
     "returncode": 0,
-    "stdout": "..........                                                               [100%]\n10 passed in 1.13s\n",
+    "stdout": "..........                                                               [100%]\n10 passed in 1.10s\n",
     "stderr": "",
     "technical_failure": false
   },
