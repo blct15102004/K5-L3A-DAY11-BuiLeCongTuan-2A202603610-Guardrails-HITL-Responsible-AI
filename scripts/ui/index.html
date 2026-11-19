@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>VinBank Shield — AI Security Console</title>
+<style>
+:root{
+  --bg:#070b14;--bg2:#0c1220;--panel:#111a2b;--panel2:#152035;--hover:#1a2740;
+  --border:#1f2c44;--border2:#2a3a58;--text:#e6edf7;--muted:#8a9bb6;--faint:#5d6e8a;
+  --blue:#4f8cff;--blue-s:rgba(79,140,255,.14);
+  --green:#22c55e;--green-s:rgba(34,197,94,.14);--amber:#f5a524;--amber-s:rgba(245,165,36,.15);
+  --red:#f43f5e;--red-s:rgba(244,63,94,.15);--violet:#a78bfa;--violet-s:rgba(167,139,250,.16);
+  --code:#0a0f1b;--shadow:0 12px 32px -14px rgba(0,0,0,.6);
+  --r:14px;--font:"Inter","Segoe UI",system-ui,sans-serif;--mono:"JetBrains Mono","Cascadia Code",Consolas,monospace;
+}
+html[data-theme="light"]{
+  --bg:#f4f6fb;--bg2:#fff;--panel:#fff;--panel2:#f7f9fd;--hover:#eef3fb;
+  --border:#e1e7f0;--border2:#cfd9e8;--text:#0f172a;--muted:#55657e;--faint:#8794a8;
+  --blue:#2f6bf0;--blue-s:rgba(47,107,240,.1);
+  --green:#16a34a;--green-s:rgba(22,163,74,.1);--amber:#d97706;--amber-s:rgba(217,119,6,.12);
+  --red:#e11d48;--red-s:rgba(225,29,72,.09);--violet:#7c3aed;--violet-s:rgba(124,58,237,.1);
+  --code:#f1f4f9;--shadow:0 10px 30px -14px rgba(15,23,42,.18);
+}
+*{box-sizing:border-box}html,body{margin:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+button{font-family:inherit}
+::-webkit-scrollbar{width:9px;height:9px}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:9px}
+
+.app{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh}
+.sidebar{position:sticky;top:0;height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:18px 14px;gap:18px}
+.brand{display:flex;gap:11px;align-items:center;padding:2px 6px}
+.logo{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,#3b6cff,#22d3ee);box-shadow:0 8px 22px -6px rgba(59,108,255,.6)}
+.brand b{display:block;font-size:15px}.brand small{color:var(--muted);font-size:11.5px}
+.nav{display:flex;flex-direction:column;gap:3px}
+.nav-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--faint);font-weight:700;padding:8px 10px 4px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:10px;border:0;background:transparent;color:var(--muted);font-size:13.5px;font-weight:600;cursor:pointer;text-align:left;transition:.15s}
+.nav-item:hover{background:var(--hover);color:var(--text)}
+.nav-item.active{background:var(--blue-s);color:var(--blue)}
+.side-foot{margin-top:auto;display:flex;flex-direction:column;gap:10px}
+.student{padding:12px;border-radius:12px;background:var(--panel);border:1px solid var(--border)}
+.av{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:12px;color:#fff;background:linear-gradient(135deg,#7c3aed,#4f8cff)}
+.srow{display:flex;gap:10px;align-items:center}.student b{font-size:13px;display:block}.student small{color:var(--muted);font-size:11.5px;font-family:var(--mono)}
+.mline{display:flex;justify-content:space-between;gap:6px;font-size:11.5px;margin-top:6px;color:var(--muted)}
+.mline code{font-family:var(--mono);color:var(--text);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px}
+
+.main{min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 28px;background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.topbar h1{margin:0;font-size:18px;letter-spacing:-.015em}.topbar p{margin:2px 0 0;color:var(--muted);font-size:12.5px}
+.tact{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.menu-btn{display:none}
+.content{padding:22px 28px 48px;max-width:1440px;width:100%}
+.page{display:none;animation:fade .25s ease}.page.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow)}
+.ch{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.ch h3{margin:0;font-size:14px}.ch .sub{color:var(--muted);font-size:12px}
+.cb{padding:16px}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:99px;font-size:11.5px;font-weight:700;white-space:nowrap;background:var(--panel2);color:var(--muted)}
+.badge.b{background:var(--blue-s);color:var(--blue)}.badge.g{background:var(--green-s);color:var(--green)}
+.badge.a{background:var(--amber-s);color:var(--amber)}.badge.r{background:var(--red-s);color:var(--red)}
+.badge.v{background:var(--violet-s);color:var(--violet)}.badge.m{font-family:var(--mono);font-weight:600;font-size:11px}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block}
+.live{animation:ping 1.8s infinite}
+@keyframes ping{0%{box-shadow:0 0 0 0 color-mix(in srgb,currentColor 60%,transparent)}100%{box-shadow:0 0 0 7px transparent}}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:8px 14px;border-radius:10px;border:1px solid var(--border2);background:var(--panel2);color:var(--text);font-weight:600;font-size:13px;cursor:pointer;transition:.15s;white-space:nowrap}
+.btn:hover:not(:disabled){border-color:var(--blue);background:var(--hover)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.pri{background:linear-gradient(135deg,#3b6cff,#4f8cff);border-color:transparent;color:#fff;box-shadow:0 8px 20px -10px rgba(59,108,255,.9)}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}.btn.ghost:hover{color:var(--text)}
+.btn.dng{color:var(--red);background:var(--red-s);border-color:transparent}
+.btn.sm{padding:5px 10px;font-size:12px;border-radius:8px}.btn.icon{padding:0;width:34px;height:34px}
+.seg{display:inline-flex;padding:3px;border-radius:11px;background:var(--code);border:1px solid var(--border);gap:2px}
+.seg button{border:0;background:transparent;color:var(--muted);padding:6px 12px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer}
+.seg button.on{background:var(--panel);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.25)}
+textarea,input[type=text]{width:100%;background:var(--code);color:var(--text);border:1px solid var(--border);border-radius:11px;padding:10px 12px;font:inherit;font-size:13.5px;outline:none;transition:.15s}
+textarea:focus,input[type=text]:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-s)}
+textarea{resize:vertical;min-height:70px}
+.lbl{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--border);background:var(--code);color:var(--text);font-size:12px;padding:5px 11px;border-radius:99px;cursor:pointer;display:inline-flex;gap:6px;align-items:center;transition:.15s}
+.chip:hover{border-color:var(--blue);background:var(--blue-s)}
+.chip i{width:6px;height:6px;border-radius:50%;background:var(--green)}
+.chip.neg i{background:var(--red)}.chip.neg:hover{border-color:var(--red);background:var(--red-s)}
+.muted{color:var(--muted)}.mono{font-family:var(--mono)}
+.empty{padding:34px 16px;text-align:center;color:var(--muted);font-size:13px}
+
+/* overview */
+.hero{padding:26px 28px;border-radius:18px;border:1px solid var(--border);background:radial-gradient(600px 220px at 85% -10%,rgba(34,211,238,.16),transparent 60%),radial-gradient(500px 260px at 0% 120%,rgba(124,58,237,.16),transparent 60%),linear-gradient(135deg,var(--panel),var(--panel2))}
+.hero h2{margin:10px 0 6px;font-size:24px;letter-spacing:-.02em}.hero p{margin:0;color:var(--muted);max-width:640px}
+.hrow{display:flex;justify-content:space-between;align-items:flex-end;gap:22px;flex-wrap:wrap}
+.score{display:flex;align-items:center;gap:16px}
+.ring{--p:0;width:92px;height:92px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--green) calc(var(--p)*1%),var(--border) 0);transition:.6s}
+.ring>div{width:74px;height:74px;border-radius:50%;background:var(--panel);display:grid;place-items:center;text-align:center}
+.ring b{font-size:19px;display:block;line-height:1.1}.ring small{font-size:10px;color:var(--muted)}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:16px}
+.kpi{padding:16px;border-radius:var(--r);background:var(--panel);border:1px solid var(--border)}
+.kpi .ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;margin-bottom:10px}
+.kpi .lb{font-size:12px;color:var(--muted);font-weight:600}.kpi .vl{font-size:26px;font-weight:800;letter-spacing:-.02em;margin:2px 0}.kpi .ft{font-size:12px;color:var(--muted)}
+.bar{height:6px;border-radius:9px;background:var(--code);overflow:hidden;margin-top:10px}.bar>span{display:block;height:100%;border-radius:9px;transition:width .6s}
+.two{display:grid;grid-template-columns:1.35fr 1fr;gap:16px;margin-top:16px}
+.flow{display:flex;align-items:stretch;flex-wrap:wrap;row-gap:10px}
+.fn{flex:1;min-width:108px;padding:10px 12px;border-radius:11px;background:var(--code);border:1px solid var(--border)}
+.fn .k{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px}
+.fn b{display:block;font-size:12.5px}.fn small{color:var(--muted);font-size:11.5px}
+.fa{display:grid;place-items:center;width:22px;color:var(--faint);flex-shrink:0}
+.ftitle{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-weight:700;font-size:13px}
+.cp{display:flex;gap:12px;align-items:flex-start;padding:10px 2px;border-bottom:1px dashed var(--border)}.cp:last-child{border-bottom:0}
+.cp .ck{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--green-s);color:var(--green);flex-shrink:0}
+.cp b{font-size:13px;display:block}.cp small{color:var(--muted);font-size:12px}.cp .pts{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--muted)}
+
+/* arena */
+.arena{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px;align-items:start}
+.agents{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.agent{cursor:pointer;text-align:left;padding:12px 14px;border-radius:13px;border:1.5px solid var(--border);background:var(--panel);display:flex;gap:11px;align-items:flex-start;color:var(--text);transition:.15s}
+.agent:hover{background:var(--hover)}
+.agent .aic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;flex-shrink:0}
+.agent b{font-size:13.5px;display:block}.agent small{color:var(--muted);font-size:11.5px;line-height:1.4;display:block}
+.agent.on[data-t=blue]{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-s)}
+.agent.on[data-t=red]{border-color:var(--red);box-shadow:0 0 0 3px var(--red-s)}
+.agent.on[data-t=red_advance]{border-color:var(--violet);box-shadow:0 0 0 3px var(--violet-s)}
+.chat{display:flex;flex-direction:column;height:calc(100vh - 230px);min-height:540px;overflow:hidden}
+.ctools{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.thread{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:16px;background:var(--code)}
+.row{display:flex;gap:10px;align-items:flex-start;max-width:86%}
+.row.me{align-self:flex-end;flex-direction:row-reverse}
+.ava{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex-shrink:0;color:#fff}
+.bub{padding:11px 14px;border-radius:13px;background:var(--panel);border:1px solid var(--border);font-size:13.5px;word-break:break-word;min-width:0}
+.row.me .bub{background:linear-gradient(135deg,#3b6cff,#4f8cff);border-color:transparent;color:#fff;white-space:pre-wrap}
+.bub.leak{border-color:var(--red);background:var(--red-s)}.bub.blk{border-color:color-mix(in srgb,var(--red) 45%,var(--border))}
+.bub.rdc{border-color:color-mix(in srgb,var(--amber) 50%,var(--border))}.bub.err{border-color:var(--red);color:var(--red)}
+.meta{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:7px;font-size:11.5px;color:var(--muted)}
+.meta .cp-btn{margin-left:auto;cursor:pointer;opacity:.55;border:0;background:none;color:inherit;padding:0;display:grid}
+.meta .cp-btn:hover{opacity:1}
+.md p{margin:0 0 8px}.md p:last-child{margin:0}.md ul{margin:4px 0 8px;padding-left:18px}
+.md code{font-family:var(--mono);font-size:12px;background:var(--code);border:1px solid var(--border);padding:1px 5px;border-radius:5px}
+.md pre{background:var(--code);border:1px solid var(--border);border-radius:9px;padding:10px;overflow-x:auto;margin:6px 0}
+.md pre code{border:0;padding:0;background:none}.md h4{margin:8px 0 4px;font-size:13.5px}
+.md mark{background:var(--red);color:#fff;padding:0 4px;border-radius:4px;font-weight:700}
+.typing{display:inline-flex;gap:4px;padding:4px 2px}
+.typing span{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:bob 1.2s infinite}
+.typing span:nth-child(2){animation-delay:.15s}.typing span:nth-child(3){animation-delay:.3s}
+@keyframes bob{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-4px);opacity:1}}
+.composer{padding:12px 14px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:10px}
+.crow{display:flex;gap:10px;align-items:flex-end}.composer textarea{min-height:48px;max-height:180px}
+.hint{font-size:11.5px;color:var(--faint);display:flex;justify-content:space-between}
+.pg{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pg>span{font-size:10.5px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;min-width:64px}
+.side{display:flex;flex-direction:column;gap:14px;position:sticky;top:84px}
+.steps{padding:14px 16px}
+.step{display:flex;gap:12px;position:relative;padding-bottom:14px}.step:last-child{padding-bottom:0}
+.step:not(:last-child)::after{content:"";position:absolute;left:12px;top:27px;bottom:2px;width:2px;background:var(--border)}
+.step.pass:not(:last-child)::after{background:color-mix(in srgb,var(--green) 55%,var(--border))}
+.sic{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;background:var(--code);border:1.5px solid var(--border2);color:var(--faint);z-index:1}
+.step.pass .sic{background:var(--green-s);border-color:var(--green);color:var(--green)}
+.step.block .sic{background:var(--red-s);border-color:var(--red);color:var(--red)}
+.step.redact .sic{background:var(--amber-s);border-color:var(--amber);color:var(--amber)}
+.step.leaked .sic{background:var(--red);border-color:var(--red);color:#fff}
+.step.skip{opacity:.4}.step b{font-size:13px;display:block}.step small{font-size:11.5px;color:var(--muted)}
+.gauge{display:flex;align-items:baseline;gap:6px}.gauge b{font-size:28px;letter-spacing:-.02em}
+.cells{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin:10px 0 12px}
+.cells span{height:18px;border-radius:5px;background:var(--code);border:1px solid var(--border);transition:.2s}
+.cells span.used{background:var(--blue-s);border-color:var(--blue)}.cells span.hot{background:var(--red-s);border-color:var(--red)}
+.mini{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mini div{padding:10px;border-radius:10px;background:var(--code);border:1px solid var(--border)}
+.mini small{display:block;font-size:11px;color:var(--muted)}.mini b{font-size:17px;font-family:var(--mono)}
+.alert{display:flex;gap:8px;align-items:flex-start;padding:9px 11px;border-radius:10px;background:var(--amber-s);color:var(--amber);font-size:12px;font-weight:600;margin-top:8px}
+.burst{display:flex;flex-wrap:wrap;gap:4px;margin-top:10px}
+.burst span{font-family:var(--mono);font-size:10.5px;font-weight:700;padding:2px 6px;border-radius:6px}
+.burst .ok{background:var(--green-s);color:var(--green)}.burst .no{background:var(--red-s);color:var(--red)}
+.cmpwrap{flex:1;overflow:auto;padding:14px;background:var(--code)}
+.compare{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.ccol{background:var(--panel);border:1px solid var(--border);border-radius:13px;display:flex;flex-direction:column;overflow:hidden}
+.ccol .hd{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border)}
+.ctrace{display:flex;flex-wrap:wrap;gap:4px;padding:10px 12px 0}
+.ctrace span{font-size:10.5px;padding:2px 7px;border-radius:6px;font-weight:700;background:var(--code);color:var(--faint);border:1px solid var(--border)}
+.ctrace .pass{color:var(--green)}.ctrace .block{color:var(--red)}.ctrace .redact{color:var(--amber)}.ctrace .leaked{background:var(--red);color:#fff;border-color:var(--red)}
+.cresp{margin:10px 12px 12px;padding:11px;border-radius:10px;background:var(--code);border:1px solid var(--border);font-size:13px;max-height:360px;overflow-y:auto}
+
+/* sandbox */
+.sbx{display:grid;grid-template-columns:1fr 1fr;gap:16px}.span2{grid-column:1/-1}
+.verdict{display:flex;align-items:center;gap:12px;padding:13px;border-radius:12px;margin-top:14px;border:1px solid var(--border);background:var(--code)}
+.verdict .vi{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;flex-shrink:0}
+.verdict.ok .vi{background:var(--green-s);color:var(--green)}.verdict.no .vi{background:var(--red-s);color:var(--red)}.verdict.warn .vi{background:var(--amber-s);color:var(--amber)}
+.verdict b{display:block;font-size:14px}.verdict small{color:var(--muted);font-size:12px}
+.checks{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:10px}
+.chk{display:flex;gap:8px;align-items:center;padding:9px 11px;border-radius:10px;background:var(--code);border:1px solid var(--border);font-size:12.5px;font-weight:600}
+.chk.ok svg{color:var(--green)}.chk.no svg{color:var(--red)}
+.diff{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.diff>div{padding:11px;border-radius:10px;background:var(--code);border:1px solid var(--border);font-family:var(--mono);font-size:12px;white-space:pre-wrap;word-break:break-word}
+.diff .t{font-family:var(--font);font-size:10.5px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;display:block}
+.rd{background:var(--amber-s);color:var(--amber);padding:0 3px;border-radius:4px;font-weight:700}
+.eg-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* evidence */
+.alist{display:flex;flex-direction:column;gap:10px}
+.at{border:1px solid var(--border);border-radius:13px;background:var(--panel2);overflow:hidden}
+.ath{display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer}.ath:hover{background:var(--hover)}
+.atn{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-family:var(--mono);font-weight:800;font-size:12px;background:var(--code);border:1px solid var(--border)}
+.ath b{font-size:13.5px}.ath .r{margin-left:auto;display:flex;gap:6px;align-items:center}
+.atb{display:none;padding:0 14px 14px}.at.open .atb{display:block}
+.chev{transition:.2s;color:var(--faint);display:grid}.at.open .chev{transform:rotate(180deg)}
+.prompt{padding:11px;border-radius:10px;background:var(--code);border:1px dashed var(--border2);font-size:12.5px;white-space:pre-wrap;margin-bottom:10px}
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.vs>div{padding:11px;border-radius:10px;border:1px solid var(--border);background:var(--code);font-size:12.5px;white-space:pre-wrap;word-break:break-word}
+.vs .hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-weight:700;font-size:12px;white-space:normal}
+.tw{overflow:auto;border-top:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th,td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--border);vertical-align:top}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:700;background:var(--panel2);position:sticky;top:0}
+tbody tr:hover td{background:var(--hover)}tbody tr.click{cursor:pointer}
+.clip{max-width:440px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.dist{display:flex;height:10px;border-radius:9px;overflow:hidden;background:var(--code);margin:4px 0 10px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px}
+.stats{display:flex;gap:10px;flex-wrap:wrap}
+.stat{padding:8px 12px;border-radius:10px;background:var(--code);border:1px solid var(--border);font-size:12px}
+.stat b{font-family:var(--mono);font-size:14px;margin-left:6px}
+
+.mbg{position:fixed;inset:0;background:rgba(3,6,14,.6);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:80;padding:20px}
+.mbg.show{display:flex}
+.modal{width:min(720px,100%);max-height:85vh;overflow:auto;background:var(--panel);border:1px solid var(--border2);border-radius:16px}
+.kv{display:grid;grid-template-columns:120px 1fr;gap:8px 14px;font-size:13px;margin-bottom:12px}
+.kv dt{color:var(--muted);font-weight:600}.kv dd{margin:0;word-break:break-word}
+.box{padding:11px;border-radius:10px;background:var(--code);border:1px solid var(--border);white-space:pre-wrap;font-size:12.5px;margin-top:6px}
+.toasts{position:fixed;right:20px;bottom:20px;display:flex;flex-direction:column;gap:8px;z-index:90}
+.toast{display:flex;gap:9px;align-items:center;padding:11px 14px;border-radius:12px;background:var(--panel);border:1px solid var(--border2);box-shadow:var(--shadow);font-size:13px;font-weight:600;animation:fade .25s;min-width:220px}
+.toast.ok{border-left:3px solid var(--green)}.toast.err{border-left:3px solid var(--red)}.toast.info{border-left:3px solid var(--blue)}
+
+@media (max-width:1180px){.arena{grid-template-columns:1fr}.side{position:static}.kpis{grid-template-columns:repeat(2,1fr)}.two,.compare{grid-template-columns:1fr}}
+@media (max-width:860px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:fixed;left:0;top:0;z-index:70;width:260px;transform:translateX(-100%);transition:.25s}
+  .sidebar.open{transform:none;box-shadow:20px 0 60px rgba(0,0,0,.5)}
+  .menu-btn{display:inline-flex}.content{padding:16px}.topbar{padding:12px 16px}
+  .agents,.sbx,.vs,.diff,.eg-grid,.kpis{grid-template-columns:1fr}
+  .chat{height:auto}.thread{height:420px;flex:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="logo" id="logo"></div>
+      <div><b>VinBank Shield</b><small>AI Security Console · Day 11</small></div>
+    </div>
+    <nav class="nav" id="nav">
+      <div class="nav-label">Workspace</div>
+      <button class="nav-item active" data-page="overview"></button>
+      <button class="nav-item" data-page="arena"></button>
+      <button class="nav-item" data-page="sandbox"></button>
+      <div class="nav-label">Evidence</div>
+      <button class="nav-item" data-page="evidence"></button>
+      <button class="nav-item" data-page="audit"></button>
+    </nav>
+    <div class="side-foot">
+      <div class="student">
+        <div class="srow"><div class="av">BT</div><div><b>Bùi Lê Công Tuấn</b><small>2A202603610 · K5-L3A</small></div></div>
+        <div class="mline" style="margin-top:10px"><span>Blue</span><code id="m-blue">—</code></div>
+        <div class="mline"><span>Red</span><code id="m-red">—</code></div>
+      </div>
+      <button class="btn sm" id="theme"></button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div style="display:flex;gap:12px;align-items:center;min-width:0">
+        <button class="btn icon ghost menu-btn" id="menu"></button>
+        <div style="min-width:0"><h1 id="pg-title">Tổng quan</h1><p id="pg-sub"></p></div>
+      </div>
+      <div class="tact">
+        <span class="badge g"><span class="dot live"></span>Server online</span>
+        <span class="badge" id="grader">Grader …</span>
+        <button class="btn sm" id="refresh"></button>
+      </div>
+    </header>
+
+    <div class="content">
+      <section class="page active" id="p-overview">
+        <div class="hero">
+          <div class="hrow">
+            <div>
+              <span class="badge b"><span class="dot"></span>Controlled Agent Security · 2026</span>
+              <h2>Defense-in-depth cho chatbot ngân hàng</h2>
+              <p>Rate limiter → Input guardrails → LLM → Output redaction → Audit &amp; monitoring → Egress allowlist. Số liệu được đọc trực tiếp từ <code class="mono">outputs/*.json</code>.</p>
+              <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
+                <button class="btn pri" data-go="arena" id="go-arena"></button>
+                <button class="btn" data-go="evidence" id="go-ev"></button>
+              </div>
+            </div>
+            <div class="score">
+              <div class="ring" id="ring"><div><b id="ring-v">—</b><small>public tests</small></div></div>
+              <div><div class="muted" style="font-size:12px;font-weight:600">Auto-grader</div><div id="ring-s" style="font-size:18px;font-weight:800">—</div><div class="muted mono" style="font-size:11.5px" id="ring-t"></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="kpis" id="kpis"></div>
+        <div class="two">
+          <div class="card">
+            <div class="ch"><h3>Kiến trúc phòng thủ</h3><span class="sub">Luồng xử lý request</span></div>
+            <div class="cb" style="display:flex;flex-direction:column;gap:18px">
+              <div><div class="ftitle"><span class="badge b">Blue</span>Agent do bạn xây dựng</div><div class="flow" id="flow-blue"></div></div>
+              <div><div class="ftitle"><span class="badge v">Red Advance</span>Agent tham chiếu 4 lớp</div><div class="flow" id="flow-ra"></div></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="ch"><h3>Tiến độ checkpoint</h3><span class="badge g">5 / 5 hoàn thành</span></div>
+            <div class="cb" id="cp-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page" id="p-arena">
+        <div class="arena">
+          <div>
+            <div class="agents" id="agents"></div>
+            <div class="card chat">
+              <div class="ctools">
+                <div class="seg" id="mode"><button class="on" data-m="single">Chat 1 agent</button><button data-m="compare">So sánh 3 agent</button></div>
+                <button class="btn sm ghost" id="clear"></button>
+              </div>
+              <div class="thread" id="thread"></div>
+              <div class="cmpwrap" id="cmpwrap" style="display:none"><div class="empty" id="cmp-empty">Nhập một câu rồi bấm <b>Gửi</b> — câu đó sẽ được gửi song song tới Blue, Red và Red Advance để so sánh.</div><div class="compare" id="compare"></div></div>
+              <div class="composer">
+                <div id="presets" style="display:flex;flex-direction:column;gap:7px"></div>
+                <div class="crow">
+                  <textarea id="input" rows="2" placeholder="Hỏi về tài khoản, lãi suất… hoặc chọn một kịch bản kiểm thử ở trên"></textarea>
+                  <button class="btn pri" id="send" style="height:48px;padding:0 20px"></button>
+                </div>
+                <div class="hint"><span>Enter để gửi · Shift+Enter xuống dòng</span><span id="charc">0 ký tự</span></div>
+              </div>
+            </div>
+          </div>
+          <aside class="side">
+            <div class="card"><div class="ch"><h3>Pipeline trace</h3><span class="badge m" id="lat">—</span></div><div class="steps" id="steps"></div></div>
+            <div class="card">
+              <div class="ch"><h3>Rate limiter</h3><span class="sub">sliding window</span></div>
+              <div class="cb">
+                <div class="gauge"><b id="rl-rem">10</b><span class="muted">/ <span id="rl-max">10</span> request còn lại · 60s</span></div>
+                <div class="cells" id="cells"></div>
+                <div style="display:flex;gap:8px"><button class="btn sm dng" id="burst"></button><button class="btn sm" id="rl-reset"></button></div>
+                <div class="burst" id="burst-out"></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="ch"><h3>Monitoring</h3><span class="badge" id="al-count">0 alert</span></div>
+              <div class="cb">
+                <div class="mini"><div><small>Requests</small><b id="m-total">0</b></div><div><small>Blocked</small><b id="m-blocked">0</b></div><div><small>Block rate</small><b id="m-rate">0%</b></div><div><small>Rate-limit hits</small><b id="m-rl">0</b></div></div>
+                <div id="alerts"></div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="page" id="p-sandbox">
+        <div class="sbx">
+          <div class="card"><div class="ch"><h3>Input guardrails</h3><span class="badge b m">detect_injection · topic_filter</span></div>
+            <div class="cb"><div class="chips" id="in-pre" style="margin-bottom:10px"></div><textarea id="in-text" rows="3"></textarea><div id="in-res"></div></div></div>
+          <div class="card"><div class="ch"><h3>Output redaction</h3><span class="badge a m">content_filter</span></div>
+            <div class="cb"><div class="chips" id="out-pre" style="margin-bottom:10px"></div><textarea id="out-text" rows="3"></textarea><div id="out-res"></div></div></div>
+          <div class="card span2"><div class="ch"><h3>Egress gateway</h3><span class="badge g m" id="hosts">allowlist</span></div>
+            <div class="cb"><div class="chips" id="eg-pre" style="margin-bottom:12px"></div>
+              <div class="eg-grid"><div><label class="lbl">Destination URL</label><input type="text" id="eg-url" value="https://api.vinbank.example/v1/transfers" /></div><div><label class="lbl">Payload</label><input type="text" id="eg-pl" value="approved transfer amount 500000" /></div></div>
+              <div id="eg-res"></div></div></div>
+        </div>
+      </section>
+
+      <section class="page" id="p-evidence">
+        <div class="card" style="margin-bottom:16px">
+          <div class="ch"><h3>Checkpoint 4 · Red vs Red Advance</h3><div style="display:flex;gap:6px;align-items:center"><span class="badge v m" id="cp4-model">—</span><button class="btn sm ghost" id="expand">Mở tất cả</button></div></div>
+          <div class="cb"><div class="alist" id="alist"></div></div>
+        </div>
+        <div class="card">
+          <div class="ch"><h3>Checkpoint 3 · Blue defense suite</h3><div class="seg" id="cp3-seg"><button class="on" data-g="all">Tất cả</button><button data-g="safe_queries">Safe</button><button data-g="attack_queries">Adversarial</button><button data-g="edge_cases">Edge</button></div></div>
+          <div class="cb" style="padding-bottom:12px"><div class="dist" id="dist"></div><div class="legend"><span><i style="background:var(--green)"></i>Allowed</span><span><i style="background:var(--red)"></i>Blocked</span><span id="rl-leg"></span></div></div>
+          <div class="tw"><table><thead><tr><th>Nhóm</th><th>Input</th><th>Kết quả</th><th>Layer</th><th>Response</th></tr></thead><tbody id="cp3-body"></tbody></table></div>
+        </div>
+      </section>
+
+      <section class="page" id="p-audit">
+        <div class="card">
+          <div class="ch">
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+              <div class="seg" id="au-src"><button class="on" data-s="saved">CP3 audit_log.json</button><button data-s="live">Phiên live</button></div>
+              <div class="seg" id="au-st"><button class="on" data-f="all">Tất cả</button><button data-f="blocked">Blocked</button><button data-f="allowed">Allowed</button></div>
+            </div>
+            <input type="text" id="au-q" placeholder="Tìm theo input, layer, request id…" style="max-width:280px" />
+          </div>
+          <div class="cb" style="padding:12px 16px"><div class="stats" id="au-stats"></div></div>
+          <div class="tw"><table><thead><tr><th>Request</th><th>Input</th><th>Kết quả</th><th>Layer</th><th>Latency</th><th>Thời điểm</th></tr></thead><tbody id="au-body"></tbody></table></div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<div class="mbg" id="modal"><div class="modal"><div class="ch"><h3 id="mo-title">Chi tiết</h3><button class="btn icon ghost" id="mo-x"></button></div><div class="cb" id="mo-body"></div></div></div>
+<div class="toasts" id="toasts"></div>
+
+<script>
+(() => {
+  const I = (p, s = 16) =>
+    `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+
+  const IC = {
+    home: '<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+    chat: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>',
+    flask: '<path d="M9 3h6M10 3v6L4.5 18.5A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-2.5L14 9V3"/><path d="M7 15h10"/>',
+    chart: '<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/>',
+    list: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+    shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+    shieldOk: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/>',
+    sword: '<path d="M14.5 17.5 3 6V3h3l11.5 11.5"/><path d="m13 19 6-6M16 16l4 4M19 21l2-2"/>',
+    lock: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+    check: '<path d="M20 6 9 17l-5-5"/>',
+    x: '<path d="M18 6 6 18M6 6l12 12"/>',
+    alert: '<path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>',
+    send: '<path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/>',
+    trash: '<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>',
+    refresh: '<path d="M21 12a9 9 0 1 1-2.6-6.4L21 8"/><path d="M21 3v5h-5"/>',
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+    moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+    menu: '<path d="M3 6h18M3 12h18M3 18h18"/>',
+    zap: '<path d="M13 2 3 14h9l-1 8 10-12h-9z"/>',
+    minus: '<path d="M5 12h14"/>',
+    copy: '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+    chev: '<path d="m6 9 6 6 6-6"/>',
+    arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+    user: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  };
+
+  const PAGES = {
+    overview: { title: "Tổng quan", sub: "Bức tranh toàn cảnh kiến trúc phòng thủ và kết quả lab", icon: "home", label: "Tổng quan" },
+    arena: { title: "Live Chat Arena", sub: "Thử nghiệm trực tiếp trên Blue, Red và Red Advance", icon: "chat", label: "Live Arena" },
+    sandbox: { title: "Guardrails & Egress Sandbox", sub: "Kiểm thử bộ lọc đầu vào, che PII và cổng Egress", icon: "flask", label: "Sandbox" },
+    evidence: { title: "Bằng chứng thực nghiệm", sub: "So sánh Checkpoint 3 & Checkpoint 4 từ outputs/*.json", icon: "chart", label: "Lab Evidence" },
+    audit: { title: "Audit Forensics Log", sub: "Truy vết từng request theo thời gian, lớp xử lý và độ trễ", icon: "list", label: "Audit Log" },
+  };
+
+  const AGENTS = [
+    { id: "blue", name: "Blue Agent", sub: "Rate Limit + Input/Output Guardrails", icon: "shieldOk", color: "var(--blue)", bg: "var(--blue-s)" },
+    { id: "red", name: "Red Agent", sub: "Mục tiêu mềm (không guardrails)", icon: "sword", color: "var(--red)", bg: "var(--red-s)" },
+    { id: "red_advance", name: "Red Advance", sub: "4 lớp Regex + NVIDIA NeMo", icon: "lock", color: "var(--violet)", bg: "var(--violet-s)" },
+  ];
+
+  const DEFAULT_TRACES = {
+    blue: [
+      { name: "Rate Limiter", status: "", detail: "Sliding window 10/60s" },
+      { name: "Input Guardrail", status: "", detail: "Injection + Topic filter" },
+      { name: "Blue LLM", status: "", detail: "Liquid LFM3" },
+      { name: "Output Guardrail", status: "", detail: "PII / Secret redaction" },
+    ],
+    red: [
+      { name: "Input Filter", status: "skip", detail: "Không có plugin chặn" },
+      { name: "Red LLM", status: "", detail: "Internal staff context" },
+      { name: "Secret Check", status: "", detail: "Leak classifier" },
+    ],
+    red_advance: [
+      { name: "L1 Regex Input", status: "", detail: "Injection + Topic" },
+      { name: "L2 NeMo Input", status: "", detail: "Protected value + self check" },
+      { name: "Red Advance LLM", status: "", detail: "Hardened prompt" },
+      { name: "L3 Regex Output", status: "", detail: "Secret patterns" },
+      { name: "L4 NeMo Output", status: "", detail: "Decode + self check" },
+    ],
+  };
+
+  const S = {
+    data: null,
+    page: "overview",
+    target: "blue",
+    mode: "single",
+    busy: false,
+    cp3Group: "all",
+    auditSrc: "saved",
+    auditFilter: "all",
+    liveLogs: [],
+    allExpanded: false,
+  };
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) =>
+    String(s ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+
+  function renderMd(raw) {
+    const text = String(raw ?? "");
+    const parts = text.split(/```([\w-]*)\n([\s\S]*?)```/g);
+    let html = "";
+    for (let i = 0; i < parts.length; i += 3) {
+      const chunk = esc(parts[i] || "");
+      const formatted = chunk
+        .replace(/`([^`]+)`/g, "<code>$1</code>")
+        .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+        .replace(/\[REDACTED\]/g, '<span class="rd">[REDACTED]</span>')
+        .replace(/\n{2,}/g, "</p><p>")
+        .replace(/\n/g, "<br>");
+      if (formatted.trim()) html += `<p>${formatted}</p>`;
+      if (i + 2 < parts.length) {
+        html += `<pre><code>${esc(parts[i + 2])}</code></pre>`;
+      }
+    }
+    return `<div class="md">${html || "<p>(empty)</p>"}</div>`;
+  }
+
+  function toast(msg, kind = "info") {
+    const el = document.createElement("div");
+    el.className = `toast ${kind}`;
+    el.innerHTML = `${I(kind === "ok" ? IC.check : kind === "err" ? IC.alert : IC.zap, 15)}<span>${esc(msg)}</span>`;
+    $("toasts").appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+  }
+
+  function initChrome() {
+    $("logo").innerHTML = I(IC.shieldOk, 20);
+    $("menu").innerHTML = I(IC.menu, 18);
+    $("refresh").innerHTML = `${I(IC.refresh, 14)}<span>Làm mới</span>`;
+    $("go-arena").innerHTML = `${I(IC.chat, 15)}<span>Mở Live Arena</span>`;
+    $("go-ev").innerHTML = `${I(IC.chart, 15)}<span>Xem bằng chứng CP3–4</span>`;
+    $("clear").innerHTML = `${I(IC.trash, 14)}<span>Xóa hội thoại</span>`;
+    $("send").innerHTML = `${I(IC.send, 15)}<span>Gửi</span>`;
+    $("burst").innerHTML = `${I(IC.zap, 14)}<span>Test Burst +5</span>`;
+    $("rl-reset").innerHTML = `${I(IC.refresh, 14)}<span>Reset</span>`;
+    $("mo-x").innerHTML = I(IC.x, 16);
+
+    $("nav").querySelectorAll(".nav-item").forEach((btn) => {
+      const pg = PAGES[btn.dataset.page];
+      btn.innerHTML = `${I(IC[pg.icon], 16)}<span>${pg.label}</span>`;
+      btn.addEventListener("click", () => goPage(btn.dataset.page));
+    });
+
+    document.querySelectorAll("[data-go]").forEach((btn) => {
+      btn.addEventListener("click", () => goPage(btn.dataset.go));
+    });
+
+    const applyTheme = (t) => {
+      document.documentElement.setAttribute("data-theme", t);
+      localStorage.setItem("vb-theme", t);
+      $("theme").innerHTML = `${I(t === "dark" ? IC.sun : IC.moon, 14)}<span>${t === "dark" ? "Giao diện sáng" : "Giao diện tối"}</span>`;
+    };
+    applyTheme(localStorage.getItem("vb-theme") || "dark");
+    $("theme").addEventListener("click", () => {
+      const cur = document.documentElement.getAttribute("data-theme");
+      applyTheme(cur === "dark" ? "light" : "dark");
+    });
+
+    $("menu").addEventListener("click", () => $("sidebar").classList.toggle("open"));
+    $("refresh").addEventListener("click", async () => {
+      await loadOverview();
+      toast("Đã đồng bộ dữ liệu mới nhất", "ok");
+    });
+    $("mo-x").addEventListener("click", () => $("modal").classList.remove("show"));
+    $("modal").addEventListener("click", (e) => {
+      if (e.target === $("modal")) $("modal").classList.remove("show");
+    });
+  }
+
+  function goPage(page) {
+    S.page = page;
+    $("sidebar").classList.remove("open");
+    $("nav").querySelectorAll(".nav-item").forEach((b) => b.classList.toggle("active", b.dataset.page === page));
+    document.querySelectorAll(".page").forEach((p) => p.classList.toggle("active", p.id === `p-${page}`));
+    $("pg-title").textContent = PAGES[page].title;
+    $("pg-sub").textContent = PAGES[page].sub;
+  }
+
+  function renderOverview() {
+    const out = S.data?.outputs || {};
+    const res = out.results || {};
+    const atk = out.attack_results || {};
+    const gr = out.grade_report || {};
+    const pubOk = gr.public_tests?.returncode === 0;
+    const passPct = gr.technical_failure === false && pubOk ? 100 : 0;
+
+    $("ring").style.setProperty("--p", passPct);
+    $("ring-v").textContent = pubOk ? "10/10" : "—";
+    $("ring-s").textContent = gr.technical_failure === false ? "PASS (0 lỗi)" : "Cần kiểm tra";
+    $("ring-t").textContent = gr.generated_at ? new Date(gr.generated_at).toLocaleString("vi-VN") : "";
+
+    const gp = $("grader");
+    gp.className = `badge ${gr.technical_failure === false ? "g" : "a"}`;
+    gp.textContent = gr.technical_failure === false ? "Grader: PASS" : "Grader: Pending";
+
+    const safeList = res.safe_queries || [];
+    const safeOk = safeList.filter((q) => !q.blocked).length;
+    const atkList = res.attack_queries || [];
+    const atkBlk = atkList.filter((q) => q.blocked).length;
+    const rl = res.rate_limit || { passed: 0, sent: 0, blocked: 0 };
+    const sum = atk.summary || {};
+
+    const kpis = [
+      {
+        ic: IC.check, col: "var(--green)", bg: "var(--green-s)",
+        lb: "Blue · Safe Queries", vl: `${safeOk} / ${safeList.length}`,
+        ft: `${safeList.length - safeOk} câu bị chặn nhầm`,
+        pct: safeList.length ? (safeOk / safeList.length) * 100 : 0,
+      },
+      {
+        ic: IC.shieldOk, col: "var(--blue)", bg: "var(--blue-s)",
+        lb: "Blue · Guardrails Blocked", vl: `${atkBlk} / ${atkList.length}`,
+        ft: "Chặn tại Input Guardrail",
+        pct: atkList.length ? (atkBlk / atkList.length) * 100 : 0,
+      },
+      {
+        ic: IC.zap, col: "var(--amber)", bg: "var(--amber-s)",
+        lb: "Rate Limiter Test", vl: `${rl.passed} / ${rl.sent}`,
+        ft: `${rl.blocked} request bị giới hạn 429`,
+        pct: rl.sent ? (rl.passed / rl.sent) * 100 : 0,
+      },
+      {
+        ic: IC.sword, col: "var(--violet)", bg: "var(--violet-s)",
+        lb: "CP4 · Red vs Advance", vl: `${sum.unsafe_leaked ?? 0}/5 vs ${sum.guards_leaked ?? 0}/5`,
+        ft: "Leak trên Red vs Red Advance",
+        pct: 100,
+      },
+    ];
+    $("kpis").innerHTML = kpis
+      .map(
+        (k) => `
+      <div class="kpi">
+        <div class="ic" style="background:${k.bg};color:${k.col}">${I(k.ic, 17)}</div>
+        <div class="lb">${esc(k.lb)}</div>
+        <div class="vl">${esc(k.vl)}</div>
+        <div class="ft">${esc(k.ft)}</div>
+        <div class="bar"><span style="width:${k.pct}%;background:${k.col}"></span></div>
+      </div>`
+      )
+      .join("");
+
+    const makeFlow = (nodes) =>
+      nodes
+        .map(
+          (n, idx) =>
+            `<div class="fn"><div class="k" style="color:${n.c}">${n.k}</div><b>${n.t}</b><small>${n.s}</small></div>` +
+            (idx < nodes.length - 1 ? `<div class="fa">${I(IC.arrow, 14)}</div>` : "")
+        )
+        .join("");
+
+    $("flow-blue").innerHTML = makeFlow([
+      { k: "L1", t: "RateLimitPlugin", s: "10 req / 60s", c: "var(--amber)" },
+      { k: "L2", t: "InputGuardrail", s: "Unicode + Topic", c: "var(--blue)" },
+      { k: "LLM", t: "Blue Agent", s: S.data?.meta?.blue_label || "Liquid", c: "var(--cyan)" },
+      { k: "L3", t: "OutputGuardrail", s: "Redact PII/Secret", c: "var(--green)" },
+      { k: "SINK", t: "Audit + Egress", s: "Log & Allowlist", c: "var(--violet)" },
+    ]);
+
+    $("flow-ra").innerHTML = makeFlow([
+      { k: "L1", t: "Regex Input", s: "Strong patterns", c: "var(--blue)" },
+      { k: "L2", t: "NeMo Input", s: "Protected + Self", c: "var(--violet)" },
+      { k: "LLM", t: "Red Advance", s: S.data?.meta?.red_label || "LLM", c: "var(--cyan)" },
+      { k: "L3", t: "Regex Output", s: "Secret regex", c: "var(--amber)" },
+      { k: "L4", t: "NeMo Output", s: "B64/Hex/ROT13", c: "var(--violet)" },
+    ]);
+
+    const cps = [
+      { n: "CP1 · Setup môi trường", d: ".venv, requirements.txt, NeMo 0.24.1", p: "Done" },
+      { n: "CP2 · Blue Input & Output Guardrails", d: "detect_injection, topic_filter, content_filter", p: "40đ" },
+      { n: "CP3 · Blue Pipeline & Egress", d: "RateLimit, Audit, Monitoring, results.json", p: "40đ" },
+      { n: "CP4 · Red Team (5 kỹ thuật)", d: "attack_results.json · Red leaked 5/5", p: "20đ" },
+      { n: "CP5 · Smoke, Public Tests & Grader", d: "39 smoke + 10 public + grade.py PASS", p: "OK" },
+    ];
+    $("cp-list").innerHTML = cps
+      .map(
+        (c) => `
+      <div class="cp">
+        <div class="ck">${I(IC.check, 13)}</div>
+        <div><b>${esc(c.n)}</b><small>${esc(c.d)}</small></div>
+        <span class="pts">${esc(c.p)}</span>
+      </div>`
+      )
+      .join("");
+  }
+
+  function renderAgents() {
+    $("agents").innerHTML = AGENTS.map(
+      (a) => `
+      <button class="agent ${S.target === a.id ? "on" : ""}" data-t="${a.id}" type="button">
+        <div class="aic" style="background:${a.bg};color:${a.color}">${I(IC[a.icon], 17)}</div>
+        <div><b>${esc(a.name)}</b><small>${esc(a.sub)}</small></div>
+      </button>`
+    ).join("");
+
+    $("agents").querySelectorAll(".agent").forEach((el) => {
+      el.addEventListener("click", () => {
+        S.target = el.dataset.t;
+        renderAgents();
+        renderTrace(DEFAULT_TRACES[S.target], `Target: ${S.target}`);
+        renderPresets();
+      });
+    });
+  }
+
+  function renderTrace(stages, label = "—") {
+    $("lat").textContent = label;
+    $("steps").innerHTML = stages
+      .map((st) => {
+        const icon =
+          st.status === "pass"
+            ? IC.check
+            : st.status === "block"
+            ? IC.x
+            : st.status === "redact"
+            ? IC.alert
+            : st.status === "leaked"
+            ? IC.alert
+            : st.status === "skip"
+            ? IC.minus
+            : IC.zap;
+        return `
+        <div class="step ${esc(st.status || "")}">
+          <div class="sic">${I(icon, 13)}</div>
+          <div><b>${esc(st.name)}</b><small>${esc(st.detail)}</small></div>
+        </div>`;
+      })
+      .join("");
+  }
+
+  function renderPresets() {
+    const res = S.data?.outputs?.results || {};
+    const safeItems = (res.safe_queries || []).slice(0, 3).map((q, i) => ({
+      label: `Safe #${i + 1}`,
+      text: q.input,
+      neg: false,
+    }));
+    const blueAtk = (res.attack_queries || []).slice(0, 3).map((q, i) => ({
+      label: `Blue Case #${i + 1}`,
+      text: q.input,
+      neg: true,
+    }));
+    const edgeOff = (res.edge_cases || []).filter((q) => q.blocked && q.input).slice(0, 1).map((q) => ({
+      label: "Off-topic",
+      text: q.input,
+      neg: true,
+    }));
+    const cp4Items = (S.data?.adversarial_prompts || []).map((p) => ({
+      label: `CP4 #${p.id}: ${String(p.category || "").split("/")[0].trim()}`,
+      text: p.input,
+      neg: true,
+    }));
+
+    const rows = [
+      { title: "Hợp lệ", items: safeItems },
+      { title: S.target === "blue" ? "Kiểm thử" : "CP4", items: S.target === "blue" ? [...blueAtk, ...edgeOff] : cp4Items },
+    ];
+    $("presets").innerHTML = "";
+    rows.forEach((row) => {
+      if (!row.items.length) return;
+      const g = document.createElement("div");
+      g.className = "pg";
+      const sp = document.createElement("span");
+      sp.textContent = row.title;
+      g.appendChild(sp);
+      row.items.forEach((it) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = `chip ${it.neg ? "neg" : ""}`;
+        b.innerHTML = `<i></i><span>${esc(it.label)}</span>`;
+        b.addEventListener("click", () => {
+          $("input").value = it.text;
+          $("charc").textContent = `${it.text.length} ký tự`;
+          $("input").focus();
+        });
+        g.appendChild(b);
+      });
+      $("presets").appendChild(g);
+    });
+  }
+
+  function appendMsg(role, text, badge = null, extra = "", agentId = S.target) {
+    const empty = $("thread").querySelector(".empty");
+    if (empty) empty.remove();
+
+    const row = document.createElement("div");
+    row.className = `row ${role === "user" ? "me" : ""}`;
+    const avBg =
+      role === "user"
+        ? "linear-gradient(135deg,#3b6cff,#22d3ee)"
+        : agentId === "red"
+        ? "var(--red)"
+        : agentId === "red_advance"
+        ? "var(--violet)"
+        : "var(--blue)";
+    const avIcon = role === "user" ? IC.user : IC.shield;
+    const badgeHtml = badge ? `<span class="badge ${badge.c}">${esc(badge.t)}</span>` : "";
+    const copyId = `cp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+
+    row.innerHTML = `
+      <div class="ava" style="background:${avBg}">${I(avIcon, 14)}</div>
+      <div class="bub ${extra}">
+        <div class="meta">
+          <strong>${role === "user" ? "Bạn" : esc(agentId.toUpperCase())}</strong>
+          ${badgeHtml}
+          <span>${new Date().toLocaleTimeString("vi-VN")}</span>
+          <button class="cp-btn" id="${copyId}" title="Sao chép">${I(IC.copy, 13)}</button>
+        </div>
+        ${role === "user" ? esc(text || "(chuỗi rỗng)") : renderMd(text)}
+      </div>`;
+    $("thread").appendChild(row);
+    $("thread").scrollTop = $("thread").scrollHeight;
+    $(copyId).addEventListener("click", () => {
+      navigator.clipboard?.writeText(text || "");
+      toast("Đã sao chép nội dung", "ok");
+    });
+  }
+
+  function addTyping() {
+    const row = document.createElement("div");
+    row.className = "row";
+    row.id = "typing-row";
+    row.innerHTML = `
+      <div class="ava" style="background:var(--blue)">${I(IC.shield, 14)}</div>
+      <div class="bub"><div class="typing"><span></span><span></span><span></span></div></div>`;
+    $("thread").appendChild(row);
+    $("thread").scrollTop = $("thread").scrollHeight;
+  }
+
+  function updateSidebarMetrics(m) {
+    if (!m) return;
+    const rl = m.rate_limit || { max_requests: 10, used: 0, remaining: 10 };
+    $("rl-rem").textContent = rl.remaining;
+    $("rl-max").textContent = rl.max_requests;
+    const hot = rl.remaining <= 2;
+    $("cells").innerHTML = Array.from({ length: rl.max_requests }, (_, idx) => {
+      const used = idx < rl.used;
+      return `<span class="${used ? (hot ? "hot" : "used") : ""}"></span>`;
+    }).join("");
+
+    $("m-total").textContent = m.total_requests ?? 0;
+    $("m-blocked").textContent = m.blocked_requests ?? 0;
+    $("m-rate").textContent = `${((m.block_rate ?? 0) * 100).toFixed(1)}%`;
+    $("m-rl").textContent = m.rate_limit_hits ?? 0;
+
+    const alerts = m.alerts || [];
+    $("al-count").textContent = `${alerts.length} alert`;
+    $("al-count").className = `badge ${alerts.length ? "a" : "g"}`;
+    $("alerts").innerHTML = alerts
+      .map((a) => `<div class="alert">${I(IC.alert, 14)}<span>${esc(a.message)}</span></div>`)
+      .join("");
+  }
+
+  function badgeForResponse(data) {
+    if (!data.ok) return { c: "r", t: "ERROR", extra: "err" };
+    if (data.leaked) return { c: "r", t: "SECRET LEAKED", extra: "leak" };
+    if (data.blocked) return { c: "r", t: `BLOCKED · ${data.layer}`, extra: "blk" };
+    if (data.redacted) return { c: "a", t: "REDACTED", extra: "rdc" };
+    if (data.layer === "model_refuse") return { c: "v", t: "MODEL REFUSE", extra: "" };
+    return { c: "g", t: "ALLOWED", extra: "" };
+  }
+
+  async function sendChat() {
+    if (S.busy) return;
+    const msg = $("input").value;
+    if (!msg.trim() && (S.target !== "blue" || S.mode === "compare")) {
+      toast("Vui lòng nhập nội dung hoặc chọn kịch bản mẫu", "err");
+      return;
+    }
+
+    S.busy = true;
+    $("send").disabled = true;
+    $("input").value = "";
+    $("charc").textContent = "0 ký tự";
+
+    try {
+      if (S.mode === "compare") {
+        $("cmp-empty").style.display = "none";
+        $("compare").innerHTML = AGENTS.map(
+          (a) => `
+          <div class="ccol" id="cmp-${a.id}">
+            <div class="hd"><strong>${esc(a.name)}</strong><span class="badge">Đang chạy…</span></div>
+            <div class="cresp"><div class="skel" style="width:80%;margin-bottom:8px"></div><div class="skel" style="width:55%"></div></div>
+          </div>`
+        ).join("");
+
+        await Promise.all(
+          AGENTS.map(async (a) => {
+            const res = await fetch("/api/chat", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ target: a.id, message: msg }),
+            });
+            const d = await res.json();
+            const b = badgeForResponse(d);
+            const col = $(`cmp-${a.id}`);
+            const trace = (d.stages || [])
+              .map((s) => `<span class="${esc(s.status || "")}">${esc(s.name)}</span>`)
+              .join("");
+            col.innerHTML = `
+              <div class="hd">
+                <strong>${esc(a.name)}</strong>
+                <div style="display:flex;gap:5px;align-items:center">
+                  <span class="badge m">${d.latency_ms ?? 0}ms</span>
+                  <span class="badge ${b.c}">${esc(b.t)}</span>
+                </div>
+              </div>
+              <div class="ctrace">${trace}</div>
+              <div class="cresp">${d.ok ? renderMd(d.response) : esc(d.error)}</div>`;
+            if (d.session_metrics) updateSidebarMetrics(d.session_metrics);
+            if (d.session_logs) S.liveLogs = d.session_logs;
+          })
+        );
+        if (S.auditSrc === "live") renderAudit();
+      } else {
+        appendMsg("user", msg);
+        addTyping();
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ target: S.target, message: msg }),
+        });
+        const d = await res.json();
+        $("typing-row")?.remove();
+        if (!d.ok) {
+          appendMsg("bot", d.error || "Unknown error", { c: "r", t: "ERROR" }, "err");
+        } else {
+          renderTrace(d.stages || [], `${d.latency_ms} ms`);
+          const b = badgeForResponse(d);
+          appendMsg("bot", d.response || "(empty)", b, b.extra);
+          if (d.session_metrics) updateSidebarMetrics(d.session_metrics);
+          if (d.session_logs) {
+            S.liveLogs = d.session_logs;
+            if (S.auditSrc === "live") renderAudit();
+          }
+        }
+      }
+    } catch (err) {
+      $("typing-row")?.remove();
+      toast(`Lỗi kết nối: ${err}`, "err");
+    } finally {
+      S.busy = false;
+      $("send").disabled = false;
+    }
+  }
+
+  function initArena() {
+    renderAgents();
+    renderTrace(DEFAULT_TRACES[S.target], "Chờ request");
+    $("thread").innerHTML = `<div class="empty">Chọn một agent phía trên rồi bấm vào chip kịch bản hoặc gõ câu hỏi để kiểm tra luồng xử lý trực tiếp.</div>`;
+
+    $("mode").querySelectorAll("button").forEach((b) => {
+      b.addEventListener("click", () => {
+        $("mode").querySelectorAll("button").forEach((x) => x.classList.remove("on"));
+        b.classList.add("on");
+        S.mode = b.dataset.m;
+        $("thread").style.display = S.mode === "single" ? "flex" : "none";
+        $("cmpwrap").style.display = S.mode === "compare" ? "block" : "none";
+      });
+    });
+
+    $("clear").addEventListener("click", () => {
+      $("thread").innerHTML = `<div class="empty">Đã xóa hội thoại. Nhập nội dung mới để tiếp tục kiểm thử.</div>`;
+      $("compare").innerHTML = "";
+      $("cmp-empty").style.display = "block";
+      renderTrace(DEFAULT_TRACES[S.target], "Chờ request");
+    });
+
+    $("input").addEventListener("input", () => {
+      $("charc").textContent = `${$("input").value.length} ký tự`;
+    });
+    $("input").addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendChat();
+      }
+    });
+    $("send").addEventListener("click", sendChat);
+
+    $("burst").addEventListener("click", async () => {
+      const res = await fetch("/api/spam-rate-limit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ count: 5 }),
+      });
+      const d = await res.json();
+      if (d.ok) {
+        updateSidebarMetrics(d.session_metrics);
+        S.liveLogs = d.session_logs || S.liveLogs;
+        if (S.auditSrc === "live") renderAudit();
+        $("burst-out").innerHTML = d.events
+          .map((ev) => `<span class="${ev.allowed ? "ok" : "no"}">#${ev.index} ${ev.allowed ? "200" : "429"}</span>`)
+          .join("");
+        toast(`Burst +5: ${d.passed} qua, ${d.blocked} bị chặn 429`, d.blocked ? "info" : "ok");
+      }
+    });
+
+    $("rl-reset").addEventListener("click", async () => {
+      const res = await fetch("/api/reset-rate-limit", { method: "POST" });
+      const d = await res.json();
+      if (d.ok) {
+        updateSidebarMetrics(d.session_metrics);
+        $("burst-out").innerHTML = "";
+        toast("Đã reset cửa sổ rate limit", "ok");
+      }
+    });
+  }
+
+  let sbTimer = null;
+  const scheduleSandbox = () => {
+    clearTimeout(sbTimer);
+    sbTimer = setTimeout(runGuardrailSandbox, 220);
+  };
+  let egTimer = null;
+  const scheduleEgress = () => {
+    clearTimeout(egTimer);
+    egTimer = setTimeout(runEgressSandbox, 220);
+  };
+
+  async function runGuardrailSandbox() {
+    const input_text = $("in-text").value;
+    const output_text = $("out-text").value;
+    const res = await fetch("/api/check-guardrails", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ input_text, output_text }),
+    });
+    const d = await res.json();
+    const inp = d.input;
+    const out = d.output;
+    const allow = inp.blue_decision === "ALLOW";
+
+    $("in-res").innerHTML = `
+      <div class="verdict ${allow ? "ok" : "no"}">
+        <div class="vi">${I(allow ? IC.check : IC.x, 18)}</div>
+        <div><b>${esc(inp.blue_decision)}</b><small>Blue InputGuardrailPlugin decision</small></div>
+      </div>
+      <div class="checks">
+        <div class="chk ${inp.detect_injection === "ALLOW" ? "ok" : "no"}">${I(inp.detect_injection === "ALLOW" ? IC.check : IC.x, 15)}<span>detect_injection: ${esc(inp.detect_injection)}</span></div>
+        <div class="chk ${inp.topic_filter === "ALLOW" ? "ok" : "no"}">${I(inp.topic_filter === "ALLOW" ? IC.check : IC.x, 15)}<span>topic_filter: ${esc(inp.topic_filter)}</span></div>
+        <div class="chk ${!inp.red_advance_l1_injection ? "ok" : "no"}">${I(!inp.red_advance_l1_injection ? IC.check : IC.x, 15)}<span>L1 Strong Inj: ${inp.red_advance_l1_injection ? "BLOCK" : "PASS"}</span></div>
+        <div class="chk ${!inp.red_advance_l1_topic ? "ok" : "no"}">${I(!inp.red_advance_l1_topic ? IC.check : IC.x, 15)}<span>L1 Strong Topic: ${inp.red_advance_l1_topic ? "BLOCK" : "PASS"}</span></div>
+      </div>`;
+
+    const redHtml = esc(out.redacted).replace(/\[REDACTED\]/g, '<span class="rd">[REDACTED]</span>');
+    $("out-res").innerHTML = `
+      <div class="verdict ${out.safe ? "ok" : "warn"}">
+        <div class="vi">${I(out.safe ? IC.check : IC.alert, 18)}</div>
+        <div><b>${out.safe ? "SAFE — Không có PII/Secret" : `ISSUES FOUND (${out.issues.length})`}</b><small>${out.issues.length ? esc(out.issues.join(" · ")) : "Câu trả lời hợp lệ"}</small></div>
+      </div>
+      <div class="diff">
+        <div><span class="t">Văn bản gốc</span>${esc(output_text)}</div>
+        <div><span class="t">Sau content_filter()</span>${redHtml}</div>
+      </div>`;
+  }
+
+  async function runEgressSandbox() {
+    const destination = $("eg-url").value;
+    const payload = $("eg-pl").value;
+    const res = await fetch("/api/check-egress", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ destination, payload }),
+    });
+    const d = await res.json();
+    const c = d.checks;
+    $("eg-res").innerHTML = `
+      <div class="verdict ${d.allowed ? "ok" : "no"}">
+        <div class="vi">${I(d.allowed ? IC.check : IC.x, 18)}</div>
+        <div><b>${d.allowed ? "EGRESS ALLOWED (True)" : "EGRESS BLOCKED (False)"}</b><small class="mono">Host: ${esc(d.parsed.hostname || "(không xác định)")}</small></div>
+      </div>
+      <div class="checks">
+        <div class="chk ${c.https_scheme ? "ok" : "no"}">${I(c.https_scheme ? IC.check : IC.x, 15)}<span>HTTPS scheme</span></div>
+        <div class="chk ${c.allowlisted_host ? "ok" : "no"}">${I(c.allowlisted_host ? IC.check : IC.x, 15)}<span>Host allowlist</span></div>
+        <div class="chk ${c.no_url_credentials ? "ok" : "no"}">${I(c.no_url_credentials ? IC.check : IC.x, 15)}<span>No URL creds</span></div>
+        <div class="chk ${c.payload_pii_clean ? "ok" : "no"}">${I(c.payload_pii_clean ? IC.check : IC.x, 15)}<span>Payload PII clean</span></div>
+        <div class="chk ${c.payload_secret_clean ? "ok" : "no"}">${I(c.payload_secret_clean ? IC.check : IC.x, 15)}<span>No secret leak</span></div>
+      </div>`;
+  }
+
+  function initSandbox() {
+    const res = S.data?.outputs?.results || {};
+    const inCases = [
+      ...(res.safe_queries || []).slice(0, 1).map((q) => ({ l: "Safe EN", v: q.input, neg: false })),
+      ...(res.safe_queries || []).slice(4, 5).map((q) => ({ l: "Safe VI", v: q.input, neg: false })),
+      ...(res.edge_cases || []).slice(1, 3).map((q, i) => ({ l: i === 0 ? "Email sạch" : "Off-topic", v: q.input, neg: q.blocked })),
+      ...(res.attack_queries || []).slice(2, 3).map((q) => ({ l: "Unicode \\u200b", v: q.input, neg: true })),
+    ];
+    $("in-pre").innerHTML = "";
+    inCases.forEach((c) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = `chip ${c.neg ? "neg" : ""}`;
+      b.innerHTML = `<i></i><span>${esc(c.l)}</span>`;
+      b.onclick = () => {
+        $("in-text").value = c.v;
+        runGuardrailSandbox();
+      };
+      $("in-pre").appendChild(b);
+    });
+    if (inCases[4]) $("in-text").value = inCases[4].v;
+    else if (inCases[0]) $("in-text").value = inCases[0].v;
+
+    const outCases = [
+      { l: "SĐT + Email + CCCD", v: "Liên hệ 0912345678 hoặc lan.nguyen@example.com, CCCD 001099012345.", neg: true },
+      { l: "API Token mẫu", v: "Token kiểm thử: sk-demo-key-abc123 và SĐT 0901234567.", neg: true },
+      { l: "Hotline công khai (Safe)", v: "VinBank support hours are 08:00-22:00 ICT. Official hotline: 1900 545 467.", neg: false },
+    ];
+    $("out-pre").innerHTML = "";
+    outCases.forEach((c) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = `chip ${c.neg ? "neg" : ""}`;
+      b.innerHTML = `<i></i><span>${esc(c.l)}</span>`;
+      b.onclick = () => {
+        $("out-text").value = c.v;
+        runGuardrailSandbox();
+      };
+      $("out-pre").appendChild(b);
+    });
+    $("out-text").value = outCases[0].v;
+
+    const egCases = [
+      { l: "Allowed Transfer", u: "https://api.vinbank.example/v1/transfers", p: "approved transfer amount 500000", neg: false },
+      { l: "Cases Endpoint", u: "https://cases.vinbank.example/v1/tickets", p: "customer inquiry ticket 1042", neg: false },
+      { l: "Unknown Domain", u: "https://external.example/collect", p: "customer account 123456", neg: true },
+      { l: "Subdomain Trick", u: "https://api.vinbank.example.attacker.tld/v1", p: "approved transfer amount 500000", neg: true },
+      { l: "HTTP (No TLS)", u: "http://api.vinbank.example/v1/transfers", p: "approved transfer amount 500000", neg: true },
+      { l: "PII in Payload", u: "https://api.vinbank.example/v1/transfers", p: "send to 0901234567 test@vinbank.com", neg: true },
+    ];
+    $("eg-pre").innerHTML = "";
+    egCases.forEach((c) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = `chip ${c.neg ? "neg" : ""}`;
+      b.innerHTML = `<i></i><span>${esc(c.l)}</span>`;
+      b.onclick = () => {
+        $("eg-url").value = c.u;
+        $("eg-pl").value = c.p;
+        runEgressSandbox();
+      };
+      $("eg-pre").appendChild(b);
+    });
+    $("hosts").textContent = `allowlist: ${(S.data?.meta?.allowed_egress_hosts || []).join(", ")}`;
+
+    $("in-text").addEventListener("input", scheduleSandbox);
+    $("out-text").addEventListener("input", scheduleSandbox);
+    $("eg-url").addEventListener("input", scheduleEgress);
+    $("eg-pl").addEventListener("input", scheduleEgress);
+    runGuardrailSandbox();
+    runEgressSandbox();
+  }
+
+  function openModal(title, rows, promptText, respText) {
+    $("mo-title").textContent = title;
+    $("mo-body").innerHTML = `
+      <dl class="kv">${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`).join("")}</dl>
+      ${promptText !== null ? `<div class="lbl">Input</div><div class="box">${esc(promptText || "(chuỗi rỗng)")}</div>` : ""}
+      ${respText !== null ? `<div class="lbl" style="margin-top:12px">Output / Response</div><div class="box">${esc(respText || "(trống)")}</div>` : ""}`;
+    $("modal").classList.add("show");
+  }
+
+  function renderEvidence() {
+    const atk = S.data?.outputs?.attack_results || {};
+    if (atk.llm_provider && atk.llm_model) {
+      $("cp4-model").textContent = `${atk.llm_provider}:${atk.llm_model}`;
+    }
+    const ua = atk.unsafe_attacks || [];
+    const ga = atk.guards_attacks || [];
+    $("alist").innerHTML = ua
+      .map((u, idx) => {
+        const g = ga[idx] || {};
+        return `
+        <div class="at ${idx === 0 ? "open" : ""}">
+          <div class="ath">
+            <div class="atn">#${esc(u.id)}</div>
+            <b>${esc(u.category)}</b>
+            <div class="r">
+              <span class="badge ${u.leaked ? "r" : "g"}">Red: ${u.leaked ? "LEAKED" : "SAFE"}</span>
+              <span class="badge ${g.leaked ? "r" : "v"}">Advance: ${g.leaked ? "LEAKED" : esc(g.layer || "BLOCKED")}</span>
+              <span class="chev">${I(IC.chev, 16)}</span>
+            </div>
+          </div>
+          <div class="atb">
+            <div class="prompt">${esc(u.input)}</div>
+            <div class="vs">
+              <div><div class="hd"><span>Red (Soft Target)</span><span class="badge ${u.leaked ? "r" : "g"}">${esc(u.blocked_at)}</span></div>${esc(u.response_preview)}</div>
+              <div><div class="hd"><span>Red Advance (4-Layer + NeMo)</span><span class="badge v">${esc(g.blocked_at)}</span></div>${esc(g.response_preview)}</div>
+            </div>
+          </div>
+        </div>`;
+      })
+      .join("");
+
+    $("alist").querySelectorAll(".ath").forEach((h) => {
+      h.addEventListener("click", () => h.parentElement.classList.toggle("open"));
+    });
+
+    $("expand").onclick = () => {
+      S.allExpanded = !S.allExpanded;
+      $("alist").querySelectorAll(".at").forEach((el) => el.classList.toggle("open", S.allExpanded));
+      $("expand").textContent = S.allExpanded ? "Thu gọn" : "Mở tất cả";
+    };
+
+    const res = S.data?.outputs?.results || {};
+    const allRows = [
+      ...(res.safe_queries || []).map((q) => ({ grp: "safe_queries", ...q })),
+      ...(res.attack_queries || []).map((q) => ({ grp: "attack_queries", ...q })),
+      ...(res.edge_cases || []).map((q) => ({ grp: "edge_cases", ...q })),
+    ];
+    const allowedN = allRows.filter((r) => !r.blocked).length;
+    const blockedN = allRows.filter((r) => r.blocked).length;
+    const tot = allRows.length || 1;
+    $("dist").innerHTML = `<span style="width:${(allowedN / tot) * 100}%;background:var(--green)"></span><span style="width:${(blockedN / tot) * 100}%;background:var(--red)"></span>`;
+    const rl = res.rate_limit || {};
+    $("rl-leg").innerHTML = `<i style="background:var(--amber)"></i>Rate limit test: ${rl.passed ?? 0}/${rl.sent ?? 0} passed (${rl.blocked ?? 0} blocked)`;
+
+    const drawCp3 = () => {
+      const rows = S.cp3Group === "all" ? allRows : allRows.filter((r) => r.grp === S.cp3Group);
+      $("cp3-body").innerHTML = rows
+        .map(
+          (r, i) => `
+        <tr class="click" data-idx="${i}">
+          <td><span class="badge m">${esc(r.grp)}</span></td>
+          <td><div class="clip">${esc(r.input || "(chuỗi rỗng)")}</div></td>
+          <td><span class="badge ${r.blocked ? "r" : "g"}">${r.blocked ? "BLOCKED" : "ALLOWED"}</span></td>
+          <td class="mono">${esc(r.layer || "—")}</td>
+          <td class="muted"><div class="clip">${esc(r.response_preview)}</div></td>
+        </tr>`
+        )
+        .join("");
+      $("cp3-body").querySelectorAll("tr").forEach((tr) => {
+        tr.addEventListener("click", () => {
+          const r = rows[Number(tr.dataset.idx)];
+          openModal(
+            `Chi tiết ${r.grp}`,
+            [
+              ["Nhóm", `<span class="badge m">${esc(r.grp)}</span>`],
+              ["Trạng thái", `<span class="badge ${r.blocked ? "r" : "g"}">${r.blocked ? "BLOCKED" : "ALLOWED"}</span>`],
+              ["Layer", `<code class="mono">${esc(r.layer || "—")}</code>`],
+            ],
+            r.input,
+            r.response_preview
+          );
+        });
+      });
+    };
+    $("cp3-seg").querySelectorAll("button").forEach((b) => {
+      b.addEventListener("click", () => {
+        $("cp3-seg").querySelectorAll("button").forEach((x) => x.classList.remove("on"));
+        b.classList.add("on");
+        S.cp3Group = b.dataset.g;
+        drawCp3();
+      });
+    });
+    drawCp3();
+  }
+
+  function renderAudit() {
+    const logs = S.auditSrc === "saved" ? S.data?.outputs?.audit_log || [] : S.liveLogs;
+    const q = $("au-q").value.trim().toLowerCase();
+    const list = logs.filter((l) => {
+      if (S.auditFilter === "blocked" && !l.blocked) return false;
+      if (S.auditFilter === "allowed" && l.blocked) return false;
+      if (q) {
+        const hay = `${l.request_id} ${l.input} ${l.layer || ""} ${l.output_preview || ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+
+    const blk = list.filter((l) => l.blocked).length;
+    const avg = list.length ? (list.reduce((a, b) => a + (Number(b.latency_ms) || 0), 0) / list.length).toFixed(1) : "0.0";
+    $("au-stats").innerHTML = `
+      <div class="stat">Tổng số<b>${list.length}</b></div>
+      <div class="stat">Allowed<b style="color:var(--green)">${list.length - blk}</b></div>
+      <div class="stat">Blocked<b style="color:var(--red)">${blk}</b></div>
+      <div class="stat">Avg latency<b>${avg} ms</b></div>`;
+
+    $("au-body").innerHTML = list.length
+      ? list
+          .map(
+            (l, i) => `
+          <tr class="click" data-i="${i}">
+            <td class="mono">${esc(l.request_id)}</td>
+            <td><div class="clip">${esc(l.input || "(chuỗi rỗng)")}</div></td>
+            <td><span class="badge ${l.blocked ? "r" : "g"}">${l.blocked ? "BLOCKED" : "ALLOWED"}</span></td>
+            <td class="mono">${esc(l.layer || "—")}</td>
+            <td class="mono">${esc(l.latency_ms)} ms</td>
+            <td class="mono muted">${l.completed_at ? new Date(l.completed_at).toLocaleTimeString("vi-VN") : "—"}</td>
+          </tr>`
+          )
+          .join("")
+      : '<tr><td colspan="6"><div class="empty">Chưa có bản ghi nào khớp bộ lọc.</div></td></tr>';
+
+    $("au-body").querySelectorAll("tr.click").forEach((tr) => {
+      tr.addEventListener("click", () => {
+        const l = list[Number(tr.dataset.i)];
+        openModal(
+          `Audit · ${l.request_id}`,
+          [
+            ["User ID", `<code class="mono">${esc(l.user_id)}</code>`],
+            ["Trạng thái", `<span class="badge ${l.blocked ? "r" : "g"}">${l.blocked ? "BLOCKED" : "ALLOWED"}</span>`],
+            ["Layer", `<code class="mono">${esc(l.layer || "—")}</code>`],
+            ["Latency", `<code class="mono">${esc(l.latency_ms)} ms</code>`],
+            ["Timestamp", `<code class="mono">${esc(l.completed_at || l.timestamp)}</code>`],
+          ],
+          l.input,
+          l.output_preview
+        );
+      });
+    });
+  }
+
+  function initAudit() {
+    $("au-src").querySelectorAll("button").forEach((b) => {
+      b.addEventListener("click", () => {
+        $("au-src").querySelectorAll("button").forEach((x) => x.classList.remove("on"));
+        b.classList.add("on");
+        S.auditSrc = b.dataset.s;
+        renderAudit();
+      });
+    });
+    $("au-st").querySelectorAll("button").forEach((b) => {
+      b.addEventListener("click", () => {
+        $("au-st").querySelectorAll("button").forEach((x) => x.classList.remove("on"));
+        b.classList.add("on");
+        S.auditFilter = b.dataset.f;
+        renderAudit();
+      });
+    });
+    $("au-q").addEventListener("input", renderAudit);
+  }
+
+  async function loadOverview() {
+    const res = await fetch("/api/overview");
+    S.data = await res.json();
+    S.liveLogs = S.data.session_logs || [];
+    $("m-blue").textContent = S.data.meta.blue_label;
+    $("m-red").textContent = S.data.meta.red_label;
+    updateSidebarMetrics(S.data.session_metrics);
+    renderOverview();
+    renderPresets();
+    renderEvidence();
+    renderAudit();
+  }
+
+  async function boot() {
+    initChrome();
+    initArena();
+    initAudit();
+    await loadOverview();
+    initSandbox();
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>
